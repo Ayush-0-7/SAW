@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -9,32 +10,67 @@ class Profile extends StatefulWidget {
 class _ProfileState extends State<Profile> {
   bool _isEditing = false;
 
-  // TextEditingController for each helper detail
-  final TextEditingController _person1NameController = TextEditingController(text: 'Person 1');
-  final TextEditingController _person1PhoneController = TextEditingController(text: '123-456-7890');
-  final TextEditingController _person2NameController = TextEditingController(text: 'Person 2');
-  final TextEditingController _person2PhoneController = TextEditingController(text: '987-654-3210');
-  final TextEditingController _person3NameController = TextEditingController(text: 'Person 3');
-  final TextEditingController _person3PhoneController = TextEditingController(text: '555-555-5555');
+  final TextEditingController _person1NameController = TextEditingController();
+  final TextEditingController _person1PhoneController = TextEditingController();
+  final TextEditingController _person2NameController = TextEditingController();
+  final TextEditingController _person2PhoneController = TextEditingController();
+  final TextEditingController _person3NameController = TextEditingController();
+  final TextEditingController _person3PhoneController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData(); // Load saved data when the widget initializes
+  }
+
+  Future<void> _loadData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _person1NameController.text = prefs.getString('person1_name') ?? 'Person 1';
+      _person1PhoneController.text = prefs.getString('person1_phone') ?? '123-456-7890';
+      _person2NameController.text = prefs.getString('person2_name') ?? 'Person 2';
+      _person2PhoneController.text = prefs.getString('person2_phone') ?? '987-654-3210';
+      _person3NameController.text = prefs.getString('person3_name') ?? 'Person 3';
+      _person3PhoneController.text = prefs.getString('person3_phone') ?? '555-555-5555';
+    });
+  }
+
+  Future<void> _saveData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+
+    // Save all person details
+    await prefs.setString('person1_name', _person1NameController.text);
+    await prefs.setString('person1_phone', _person1PhoneController.text);
+    await prefs.setString('person2_name', _person2NameController.text);
+    await prefs.setString('person2_phone', _person2PhoneController.text);
+    await prefs.setString('person3_name', _person3NameController.text);
+    await prefs.setString('person3_phone', _person3PhoneController.text);
+
+    // Store person 1 phone number as helperPhone
+    await prefs.setString('helperPhone', _person1PhoneController.text);
+
+    // Reload the updated data into the UI immediately after saving
+    await _loadData();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:const Color(0xFFF8E9E9), // Light pink background
+      backgroundColor: const Color(0xFFF8E9E9),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        elevation: 0, // Remove shadow
-        automaticallyImplyLeading: false, // Prevents default back button
-        leading: IconButton( // Custom back button
+        elevation: 0,
+        automaticallyImplyLeading: false,
+        leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            Navigator.pop(context); // Go back to the previous screen
+            Navigator.pop(context);
           },
         ),
         title: const Row(
           mainAxisAlignment: MainAxisAlignment.start,
           children: [
-            Icon(Icons.person, color: Colors.black, size: 50), // Profile Icon
+            Icon(Icons.person, color: Colors.black, size: 50),
             SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -47,7 +83,7 @@ class _ProfileState extends State<Profile> {
                     color: Colors.black,
                   ),
                 ),
-                 Text(
+                Text(
                   'Your Name',
                   style: TextStyle(
                     fontSize: 18,
@@ -73,7 +109,6 @@ class _ProfileState extends State<Profile> {
               ),
             ),
             const SizedBox(height: 20),
-            // Display Helper Details or Edit Form
             if (_isEditing) ...[
               buildHelperEditForm('Person 1', _person1NameController, _person1PhoneController),
               const SizedBox(height: 20),
@@ -90,9 +125,12 @@ class _ProfileState extends State<Profile> {
             const SizedBox(height: 40),
             Center(
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
+                  if (_isEditing) {
+                    await _saveData(); // Save data and update UI immediately
+                  }
                   setState(() {
-                    _isEditing = !_isEditing; // Toggle between edit and display mode
+                    _isEditing = !_isEditing;
                   });
                 },
                 style: ElevatedButton.styleFrom(
@@ -102,7 +140,7 @@ class _ProfileState extends State<Profile> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child:  Text(
+                child: Text(
                   _isEditing ? 'Save Details' : 'Edit Profile',
                   style: const TextStyle(
                     fontSize: 18,
@@ -117,18 +155,17 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  // Helper method to build a box with name and phone number
   Widget buildHelperDetailBox(String name, String phoneNumber) {
     return Container(
-      padding: const  EdgeInsets.all(15),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        boxShadow:const [
+        boxShadow: const [
           BoxShadow(
             color: Colors.black26,
             blurRadius: 4,
-            offset:Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -155,7 +192,6 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  // Helper method to build a form for editing helper details
   Widget buildHelperEditForm(String personName, TextEditingController nameController, TextEditingController phoneController) {
     return Container(
       padding: const EdgeInsets.all(15),

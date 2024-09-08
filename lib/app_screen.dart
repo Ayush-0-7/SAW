@@ -1,7 +1,10 @@
 import 'dart:async';
+
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_app1/main.dart';
-import 'package:flutter_app1/profile.dart'; // Import your profile screen
+import 'package:flutter_app1/profile.dart';
+import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart'; // Import your profile screen
 
 class MyAppscreen extends StatelessWidget {
   const MyAppscreen ({super.key});
@@ -19,13 +22,33 @@ class MyAppscreen extends StatelessWidget {
 
 class TrackModeScreen extends StatefulWidget {
   const TrackModeScreen({super.key});
+  
   @override
   _TrackModeScreenState createState() => _TrackModeScreenState();
 }
 
 class _TrackModeScreenState extends State<TrackModeScreen> {
   bool isTrackModeOn = false;
-
+  SharedPreferences ? _prefs;
+  String helperphone = '';
+  @override
+  void initState(){
+    super.initState();
+    _initPrefs();
+  }
+  void _initPrefs() async{
+    _prefs = await SharedPreferences.getInstance();
+    _getprefs();
+  }
+  void _getprefs(){
+    setState(() {
+     helperphone = _prefs?.getString('helperPhone') ?? 'null';
+    });
+     print('Get prefs method called.');
+  }
+  _callNumber(String number) async{ 
+   await FlutterPhoneDirectCaller.callNumber(number);
+  }
   void _showPermissionDialog() {
     showDialog(
       context: context,
@@ -77,6 +100,8 @@ class _TrackModeScreenState extends State<TrackModeScreen> {
         return SafetyAlertDialog(
           onClose: () {
             _showEmergencySentMessage(); // Show emergency message after closing
+            _getprefs();
+            _callNumber(helperphone);
           },
         );
       },
@@ -109,6 +134,7 @@ class _TrackModeScreenState extends State<TrackModeScreen> {
       MaterialPageRoute(builder: (context) => const MyApp()), // Navigate to the HomePage
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
